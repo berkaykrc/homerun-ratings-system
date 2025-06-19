@@ -1,53 +1,38 @@
-# Go RESTful API Starter Kit (Boilerplate)
+# homerun ratings system
 
-[![GoDoc](https://godoc.org/github.com/qiangxue/go-rest-api?status.png)](http://godoc.org/github.com/qiangxue/go-rest-api)
-[![Build Status](https://github.com/qiangxue/go-rest-api/workflows/build/badge.svg)](https://github.com/qiangxue/go-rest-api/actions?query=workflow%3Abuild)
+
+[![GoDoc](https://godoc.org/github.com/berkaykrc/homerun-ratings-system?status.png)](http://godoc.org/github.com/berkaykrc/homerun-ratings-system)
+[![Build Status](https://github.com/berkaykrc/homerun-ratings-system/workflows/build/badge.svg)](https://github.com/berkaykrc/homerun-ratings-system/actions?query=workflow%3Abuild)
 [![Code Coverage](https://codecov.io/gh/qiangxue/go-rest-api/branch/master/graph/badge.svg)](https://codecov.io/gh/qiangxue/go-rest-api)
-[![Go Report](https://goreportcard.com/badge/github.com/qiangxue/go-rest-api)](https://goreportcard.com/report/github.com/qiangxue/go-rest-api)
+[![Go Report](https://goreportcard.com/badge/github.com/berkaykrc/homerun-ratings-system)](https://goreportcard.com/report/github.com/berkaykrc/homerun-ratings-system)
 
-This starter kit is designed to get you up and running with a project structure optimized for developing
-RESTful API services in Go. It promotes the best practices that follow the [SOLID principles](https://en.wikipedia.org/wiki/SOLID)
+This project develops RESTful API services in Go. It promotes the best practices that follow the [SOLID principles](https://en.wikipedia.org/wiki/SOLID)
 and [clean architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html). 
 It encourages writing clean and idiomatic Go code. 
 
-The kit provides the following features right out of the box:
-
-* RESTful endpoints in the widely accepted format
-* Standard CRUD operations of a database table
-* JWT-based authentication
-* Environment dependent application configuration management
-* Structured logging with contextual information
-* Error handling with proper error response generation
-* Database migration
-* Data validation
-* Full test coverage
-* Live reloading during development
- 
-The kit uses the following Go packages which can be easily replaced with your own favorite ones
-since their usages are mostly localized and abstracted. 
+The project uses the following Go packages to implement the above features:
 
 * Routing: [ozzo-routing](https://github.com/go-ozzo/ozzo-routing)
 * Database access: [ozzo-dbx](https://github.com/go-ozzo/ozzo-dbx)
 * Database migration: [golang-migrate](https://github.com/golang-migrate/migrate)
 * Data validation: [ozzo-validation](https://github.com/go-ozzo/ozzo-validation)
 * Logging: [zap](https://github.com/uber-go/zap)
-* JWT: [jwt-go](https://github.com/dgrijalva/jwt-go)
 
 ## Getting Started
 
 If this is your first time encountering Go, please follow [the instructions](https://golang.org/doc/install) to
-install Go on your computer. The kit requires **Go 1.13 or above**.
+install Go on your computer. The project requires **Go 1.18 or above**.
 
-[Docker](https://www.docker.com/get-started) is also needed if you want to try the kit without setting up your
-own database server. The kit requires **Docker 17.05 or higher** for the multi-stage build support.
+[Docker](https://www.docker.com/get-started) is also needed if you want to try the project without setting up your
+own database server. The project requires **Docker 17.05 or higher** for the multi-stage build support.
 
-After installing Go and Docker, run the following commands to start experiencing this starter kit:
+After installing Go and Docker, run the following commands to start experiencing this project:
 
 ```shell
 # download the starter kit
-git clone https://github.com/qiangxue/go-rest-api.git
+git clone https://github.com/berkaykrc/homerun-ratings-system.git
 
-cd go-rest-api
+cd homerun-ratings-system
 
 # start a PostgreSQL database server in a Docker container
 make db-start
@@ -66,35 +51,20 @@ make run-live
 At this time, you have a RESTful API server running at `http://127.0.0.1:8080`. It provides the following endpoints:
 
 * `GET /healthcheck`: a healthcheck service provided for health checking purpose (needed when implementing a server cluster)
-* `POST /v1/login`: authenticates a user and generates a JWT
-* `GET /v1/albums`: returns a paginated list of the albums
-* `GET /v1/albums/:id`: returns the detailed information of an album
-* `POST /v1/albums`: creates a new album
-* `PUT /v1/albums/:id`: updates an existing album
-* `DELETE /v1/albums/:id`: deletes an album
+* `GET /v1/customers/:id`: returns the detailed information of a customer
+* `POST /v1/customers`: creates a new customer
+* `GET /v1/serviceproviders/:id`: returns the detailed information of a service provider
+* `POST /v1/serviceproviders`: creates a new customer
+* `GET /v1/ratings/:id`: returns the detailed information of ratings
+* `POST /v1/ratings`: creates a new rating
 
-Try the URL `http://localhost:8080/healthcheck` in a browser, and you should see something like `"OK v1.0.0"` displayed.
 
-If you have `cURL` or some API client tools (e.g. [Postman](https://www.getpostman.com/)), you may try the following 
-more complex scenarios:
-
-```shell
-# authenticate the user via: POST /v1/login
-curl -X POST -H "Content-Type: application/json" -d '{"username": "demo", "password": "pass"}' http://localhost:8080/v1/login
-# should return a JWT token like: {"token":"...JWT token here..."}
-
-# with the above JWT token, access the album resources, such as: GET /v1/albums
-curl -X GET -H "Authorization: Bearer ...JWT token here..." http://localhost:8080/v1/albums
-# should return a list of album records in the JSON format
-```
-
-To use the starter kit as a starting point of a real project whose package name is `github.com/abc/xyz`, do a global 
-replacement of the string `github.com/qiangxue/go-rest-api` in all of project files with the string `github.com/abc/xyz`.
+Try the URL `http://localhost:8080/healthcheck` in a browser, and you should see something like `"OK vx.x.x"` displayed.
 
 
 ## Project Layout
 
-The starter kit uses the following project layout:
+The project uses the following project layout:
  
 ```
 .
@@ -102,9 +72,10 @@ The starter kit uses the following project layout:
 │   └── server           the API server application
 ├── config               configuration files for different environments
 ├── internal             private application and library code
-│   ├── album            album-related features
-│   ├── auth             authentication feature
 │   ├── config           configuration library
+│   ├── customer         customer feature
+│   ├── serviceprovider  service provider feature
+│   ├── rating           rating feature
 │   ├── entity           entity definitions and domain logic
 │   ├── errors           error types and handling
 │   ├── healthcheck      healthcheck feature
@@ -123,25 +94,11 @@ The top level directories `cmd`, `internal`, `pkg` are commonly found in other p
 
 Within `internal` and `pkg`, packages are structured by features in order to achieve the so-called
 [screaming architecture](https://blog.cleancoder.com/uncle-bob/2011/09/30/Screaming-Architecture.html). For example, 
-the `album` directory contains the application logic related with the album feature. 
+the `customer` directory contains the application logic related with the customer feature. 
 
 Within each feature package, code are organized in layers (API, service, repository), following the dependency guidelines
 as described in the [clean architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html).
 
-
-## Common Development Tasks
-
-This section describes some common development tasks using this starter kit.
-
-### Implementing a New Feature
-
-Implementing a new feature typically involves the following steps:
-
-1. Develop the service that implements the business logic supporting the feature. Please refer to `internal/album/service.go` as an example.
-2. Develop the RESTful API exposing the service about the feature. Please refer to `internal/album/api.go` as an example.
-3. Develop the repository that persists the data entities needed by the service. Please refer to `internal/album/repository.go` as an example.
-4. Wire up the above components together by injecting their dependencies in the main function. Please refer to 
-   the `album.RegisterHandlers()` call in `cmd/server/main.go`.
 
 ### Working with DB Transactions
 

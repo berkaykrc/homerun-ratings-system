@@ -3,14 +3,15 @@ package dbcontext
 import (
 	"context"
 	"database/sql"
-	dbx "github.com/go-ozzo/ozzo-dbx"
-	routing "github.com/go-ozzo/ozzo-routing/v2"
-	_ "github.com/lib/pq" // initialize posgresql for test
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	dbx "github.com/go-ozzo/ozzo-dbx"
+	routing "github.com/go-ozzo/ozzo-routing/v2"
+	_ "github.com/lib/pq" // initialize posgresql for test
+	"github.com/stretchr/testify/assert"
 )
 
 const DSN = "postgres://127.0.0.1/go_restful?sslmode=disable&user=postgres&password=postgres"
@@ -72,7 +73,7 @@ func TestDB_TransactionHandler(t *testing.T) {
 		// successful transaction
 		{
 			res := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "http://127.0.0.1/users", nil)
+			req, _ := http.NewRequest("GET", "http://127.0.0.1/test", nil)
 			err := routing.NewContext(res, req, txHandler, func(c *routing.Context) error {
 				ctx := c.Request.Context()
 				_, err := dbc.With(ctx).Insert("dbcontexttest", dbx.Params{"id": "1", "name": "name1"}).Execute()
@@ -88,7 +89,7 @@ func TestDB_TransactionHandler(t *testing.T) {
 		// failed transaction
 		{
 			res := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "http://127.0.0.1/users", nil)
+			req, _ := http.NewRequest("GET", "http://127.0.0.1/test", nil)
 			err := routing.NewContext(res, req, txHandler, func(c *routing.Context) error {
 				ctx := c.Request.Context()
 				_, err := dbc.With(ctx).Insert("dbcontexttest", dbx.Params{"id": "3", "name": "name1"}).Execute()

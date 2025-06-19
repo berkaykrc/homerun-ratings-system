@@ -38,14 +38,6 @@ func TestNotFound(t *testing.T) {
 	assert.NotEmpty(t, res.Error())
 }
 
-func TestUnauthorized(t *testing.T) {
-	res := Unauthorized("test")
-	assert.Equal(t, http.StatusUnauthorized, res.StatusCode())
-	assert.Equal(t, "test", res.Error())
-	res = Unauthorized("")
-	assert.NotEmpty(t, res.Error())
-}
-
 func TestForbidden(t *testing.T) {
 	res := Forbidden("test")
 	assert.Equal(t, http.StatusForbidden, res.StatusCode())

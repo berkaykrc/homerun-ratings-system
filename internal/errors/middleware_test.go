@@ -3,13 +3,14 @@ package errors
 import (
 	"database/sql"
 	"fmt"
-	routing "github.com/go-ozzo/ozzo-routing/v2"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/qiangxue/go-rest-api/pkg/log"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/berkaykrc/homerun-ratings-system/pkg/log"
+	routing "github.com/go-ozzo/ozzo-routing/v2"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHandler(t *testing.T) {
@@ -72,7 +73,7 @@ func Test_buildErrorResponse(t *testing.T) {
 
 func buildContext(handlers ...routing.Handler) (*routing.Context, *httptest.ResponseRecorder) {
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://127.0.0.1/users", nil)
+	req, _ := http.NewRequest("GET", "http://127.0.0.1/healthcheck", nil)
 	return routing.NewContext(res, req, handlers...), res
 }
 

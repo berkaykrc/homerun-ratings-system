@@ -2,11 +2,12 @@
 package accesslog
 
 import (
-	routing "github.com/go-ozzo/ozzo-routing/v2"
-	"github.com/go-ozzo/ozzo-routing/v2/access"
-	"github.com/qiangxue/go-rest-api/pkg/log"
 	"net/http"
 	"time"
+
+	"github.com/berkaykrc/homerun-ratings-system/pkg/log"
+	routing "github.com/go-ozzo/ozzo-routing/v2"
+	"github.com/go-ozzo/ozzo-routing/v2/access"
 )
 
 // Handler returns a middleware that records an access log message for every HTTP request being processed.
