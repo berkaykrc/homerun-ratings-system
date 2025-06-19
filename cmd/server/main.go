@@ -5,22 +5,24 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/go-ozzo/ozzo-dbx"
-	"github.com/go-ozzo/ozzo-routing/v2"
-	"github.com/go-ozzo/ozzo-routing/v2/content"
-	"github.com/go-ozzo/ozzo-routing/v2/cors"
-	_ "github.com/lib/pq"
-	"github.com/qiangxue/go-rest-api/internal/album"
-	"github.com/qiangxue/go-rest-api/internal/auth"
-	"github.com/qiangxue/go-rest-api/internal/config"
-	"github.com/qiangxue/go-rest-api/internal/errors"
-	"github.com/qiangxue/go-rest-api/internal/healthcheck"
-	"github.com/qiangxue/go-rest-api/pkg/accesslog"
-	"github.com/qiangxue/go-rest-api/pkg/dbcontext"
-	"github.com/qiangxue/go-rest-api/pkg/log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/berkaykrc/homerun-ratings-system/internal/config"
+	"github.com/berkaykrc/homerun-ratings-system/internal/customer"
+	"github.com/berkaykrc/homerun-ratings-system/internal/errors"
+	"github.com/berkaykrc/homerun-ratings-system/internal/healthcheck"
+	"github.com/berkaykrc/homerun-ratings-system/internal/rating"
+	"github.com/berkaykrc/homerun-ratings-system/internal/serviceprovider"
+	"github.com/berkaykrc/homerun-ratings-system/pkg/accesslog"
+	"github.com/berkaykrc/homerun-ratings-system/pkg/dbcontext"
+	"github.com/berkaykrc/homerun-ratings-system/pkg/log"
+	dbx "github.com/go-ozzo/ozzo-dbx"
+	routing "github.com/go-ozzo/ozzo-routing/v2"
+	"github.com/go-ozzo/ozzo-routing/v2/content"
+	"github.com/go-ozzo/ozzo-routing/v2/cors"
+	_ "github.com/lib/pq"
 )
 
 // Version indicates the current version of the application.
@@ -85,17 +87,17 @@ func buildHandler(logger log.Logger, db *dbcontext.DB, cfg *config.Config) http.
 
 	rg := router.Group("/v1")
 
-	authHandler := auth.Handler(cfg.JWTSigningKey)
+	customerRepo := customer.NewRepository(db, logger)
+	serviceProviderRepo := serviceprovider.NewRepository(db, logger)
+	ratingRepo := rating.NewRepository(db, logger)
 
-	album.RegisterHandlers(rg.Group(""),
-		album.NewService(album.NewRepository(db, logger), logger),
-		authHandler, logger,
-	)
+	customerService := customer.NewService(customerRepo, logger)
+	serviceProviderService := serviceprovider.NewService(serviceProviderRepo, logger)
+	ratingService := rating.NewService(ratingRepo, customerService, serviceProviderService, logger)
 
-	auth.RegisterHandlers(rg.Group(""),
-		auth.NewService(cfg.JWTSigningKey, cfg.JWTExpiration, logger),
-		logger,
-	)
+	customer.RegisterHandlers(rg.Group(""), customerService, logger)
+	serviceprovider.RegisterHandlers(rg.Group(""), serviceProviderService, logger)
+	rating.RegisterHandlers(rg.Group(""), ratingService, logger)
 
 	return router
 }

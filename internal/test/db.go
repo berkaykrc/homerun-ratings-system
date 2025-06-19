@@ -1,14 +1,16 @@
 package test
 
 import (
-	dbx "github.com/go-ozzo/ozzo-dbx"
-	_ "github.com/lib/pq" // initialize posgresql for test
-	"github.com/qiangxue/go-rest-api/internal/config"
-	"github.com/qiangxue/go-rest-api/pkg/dbcontext"
-	"github.com/qiangxue/go-rest-api/pkg/log"
 	"path"
+	"regexp"
 	"runtime"
 	"testing"
+
+	"github.com/berkaykrc/homerun-ratings-system/internal/config"
+	"github.com/berkaykrc/homerun-ratings-system/pkg/dbcontext"
+	"github.com/berkaykrc/homerun-ratings-system/pkg/log"
+	dbx "github.com/go-ozzo/ozzo-dbx"
+	_ "github.com/lib/pq" // initialize posgresql for test
 )
 
 var db *dbcontext.DB
@@ -22,8 +24,7 @@ func DB(t *testing.T) *dbcontext.DB {
 	dir := getSourcePath()
 	cfg, err := config.Load(dir+"/../../config/local.yml", logger)
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Fatalf("%v", err)
 	}
 	dbc, err := dbx.MustOpen("postgres", cfg.DSN)
 	if err != nil {
@@ -35,13 +36,17 @@ func DB(t *testing.T) *dbcontext.DB {
 	return db
 }
 
-// ResetTables truncates all data in the specified tables.
+// ResetTables truncates all data in the specified tables
 func ResetTables(t *testing.T, db *dbcontext.DB, tables ...string) {
+	validTableName := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 	for _, table := range tables {
-		_, err := db.DB().TruncateTable(table).Execute()
+		if !validTableName.MatchString(table) {
+			t.Fatalf("invalid table name: %s", table)
+		}
+		// Use CASCADE to handle foreign key constraints automatically
+		_, err := db.DB().NewQuery("TRUNCATE TABLE " + table + " RESTART IDENTITY CASCADE").Execute()
 		if err != nil {
-			t.Error(err)
-			t.FailNow()
+			t.Fatalf("%v", err)
 		}
 	}
 }

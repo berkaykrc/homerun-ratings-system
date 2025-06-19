@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS customers, service_providers, ratings CASCADE;
