@@ -79,12 +79,24 @@ testdata: ## populate the database with test data
 	@docker exec -it postgres psql "$(APP_DSN)" -f /testdata/testdata.sql
 
 .PHONY: lint
-lint: ## run golint on all Go package
-	@golint $(PACKAGES)
+lint: ## run golangci-lint on all Go packages
+	@which golangci-lint > /dev/null || (echo "golangci-lint not found. Install it with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+	@golangci-lint run ./...
+
+.PHONY: lint-simple
+lint-simple: ## run basic Go linting with vet and fmt check
+	@echo "Running go vet..."
+	@go vet ./...
+	@echo "Checking formatting..."
+	@test -z "$$(go fmt ./...)" || (echo "Code is not formatted. Run 'make fmt' to fix." && exit 1)
+
+.PHONY: lint-install
+lint-install: ## install golangci-lint
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 .PHONY: fmt
 fmt: ## run "go fmt" on all Go packages
-	@go fmt $(PACKAGES)
+	@go fmt ./...
 
 .PHONY: migrate
 migrate: ## run all new database migrations

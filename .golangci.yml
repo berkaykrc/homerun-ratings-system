@@ -1,0 +1,62 @@
+run:
+  timeout: 5m
+  go: '1.18'
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - goconst
+    - gocyclo
+    - dupl
+
+issues:
+  exclude-use-default: false
+  exclude:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+    
+    # Exclude known linters from partially hard-to-fix issues
+    - linters:
+        - gosec
+      text: "G204" # Subprocess launched with variable
+      
+    - linters:
+        - gosec
+      text: "G301" # Poor file permissions used
+      
+    - linters:
+        - gosec
+      text: "G302" # Poor file permissions used
+
+  max-same-issues: 0
+  max-issues-per-linter: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
