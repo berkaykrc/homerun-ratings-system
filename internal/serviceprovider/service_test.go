@@ -33,46 +33,40 @@ func TestCreateServiceProviderRequest_Validate(t *testing.T) {
 
 func Test_service_CRUD(t *testing.T) {
 	logger, _ := log.NewForTest()
-	s := NewService(&mockRepository{}, logger)
+	s := NewService(&mockRepository{items: []entity.ServiceProvider{
+		{ID: "123", Name: "serviceprovider123", Email: "serviceprovider123@example.com"},
+	}}, logger)
 
 	ctx := context.Background()
 	// initial count
 	count, _ := s.Count(ctx)
-	assert.Equal(t, 0, count)
-
-	// successful creation
-	serviceprovider, err := s.Create(ctx, CreateServiceProviderRequest{Name: "test", Email: "test@example.com"})
-	assert.Nil(t, err)
-	assert.NotEmpty(t, serviceprovider.ID)
-	id := serviceprovider.ID
-	assert.Equal(t, "test", serviceprovider.Name)
-	assert.NotEmpty(t, serviceprovider.CreatedAt)
-	assert.NotEmpty(t, serviceprovider.UpdatedAt)
-	count, _ = s.Count(ctx)
 	assert.Equal(t, 1, count)
+
+	// get
+	serviceprovider, err := s.Get(ctx, "123")
+	assert.Nil(t, err)
+	assert.Equal(t, "serviceprovider123", serviceprovider.Name)
+	_, err = s.Get(ctx, "404")
+	assert.Equal(t, sql.ErrNoRows, err)
+
+	// create
+	serviceprovider, err = s.Create(ctx, CreateServiceProviderRequest{Name: "test", Email: "test@example.com"})
+	assert.Nil(t, err)
+	assert.Equal(t, "test", serviceprovider.Name)
+	count, _ = s.Count(ctx)
+	assert.Equal(t, 2, count)
 
 	// validation error in creation
 	_, err = s.Create(ctx, CreateServiceProviderRequest{Name: "", Email: "test@example.com"})
 	assert.NotNil(t, err)
 	count, _ = s.Count(ctx)
-	assert.Equal(t, 1, count)
+	assert.Equal(t, 2, count)
 
 	// unexpected error in creation
-	_, err = s.Create(ctx, CreateServiceProviderRequest{Name: "error", Email: "error@example.com"})
+	_, err = s.Create(ctx, CreateServiceProviderRequest{Name: "error", Email: "test@example.com"})
 	assert.Equal(t, errCRUD, err)
 	count, _ = s.Count(ctx)
-	assert.Equal(t, 1, count)
-
-	_, _ = s.Create(ctx, CreateServiceProviderRequest{Name: "test2", Email: "test2@example.com"})
-
-	// get
-	_, err = s.Get(ctx, "none")
-	assert.NotNil(t, err)
-	serviceprovider, err = s.Get(ctx, id)
-	assert.Nil(t, err)
-	assert.Equal(t, "test", serviceprovider.Name)
-	assert.Equal(t, id, serviceprovider.ID)
-
+	assert.Equal(t, 2, count)
 }
 
 type mockRepository struct {

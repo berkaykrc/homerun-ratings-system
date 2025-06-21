@@ -14,6 +14,7 @@ func RegisterHandlers(r *routing.RouteGroup, service Service, logger log.Logger)
 
 	r.Get("/ratings/<id>", res.get)
 	r.Post("/ratings", res.create)
+	r.Get("/service-providers/<id>/average-rating", res.getAverageRating)
 }
 
 type resource struct {
@@ -42,4 +43,13 @@ func (r resource) create(c *routing.Context) error {
 	}
 
 	return c.WriteWithStatus(rating, http.StatusCreated)
+}
+
+func (r resource) getAverageRating(c *routing.Context) error {
+	averageRating, err := r.service.GetAverageRatingByServiceProvider(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		return err
+	}
+
+	return c.Write(averageRating)
 }
