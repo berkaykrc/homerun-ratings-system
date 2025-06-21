@@ -83,6 +83,50 @@ func Test_service_CRUD(t *testing.T) {
 
 }
 
+func TestService_GetAverageRatingByServiceProvider(t *testing.T) {
+	logger, _ := log.NewForTest()
+
+	// Create a mock repository with sample ratings
+	mockRepo := &mockRepository{items: []entity.Rating{
+		{ID: "1", CustomerID: "customer1", ServiceProviderID: "provider1", RatingValue: 5, Comment: "Excellent"},
+		{ID: "2", CustomerID: "customer2", ServiceProviderID: "provider1", RatingValue: 4, Comment: "Good"},
+		{ID: "3", CustomerID: "customer3", ServiceProviderID: "provider1", RatingValue: 3, Comment: "Average"},
+		{ID: "4", CustomerID: "customer4", ServiceProviderID: "provider2", RatingValue: 5, Comment: "Great service"},
+	}}
+
+	customerService := customer.NewService(&mockCustomerRepository{}, logger)
+	serviceProviderService := serviceprovider.NewService(&mockServiceProviderRepository{}, logger)
+	s := NewService(mockRepo, customerService, serviceProviderService, logger)
+
+	ctx := context.Background()
+
+	// Test GetAverageRatingByServiceProvider for provider with ratings
+	averageRating, err := s.GetAverageRatingByServiceProvider(ctx, "provider1")
+	assert.Nil(t, err)
+	assert.Equal(t, "provider1", averageRating.ServiceProviderID)
+	assert.Equal(t, 4.0, averageRating.AverageRating) // (5+4+3)/3 = 4.0
+	assert.Equal(t, 3, averageRating.TotalRatings)
+	assert.NotZero(t, averageRating.LastUpdated)
+
+	// Test GetAverageRatingByServiceProvider for provider with one rating
+	averageRating, err = s.GetAverageRatingByServiceProvider(ctx, "provider2")
+	assert.Nil(t, err)
+	assert.Equal(t, "provider2", averageRating.ServiceProviderID)
+	assert.Equal(t, 5.0, averageRating.AverageRating)
+	assert.Equal(t, 1, averageRating.TotalRatings)
+
+	// Test GetAverageRatingByServiceProvider for provider with no ratings
+	averageRating, err = s.GetAverageRatingByServiceProvider(ctx, "provider3")
+	assert.Nil(t, err)
+	assert.Equal(t, "provider3", averageRating.ServiceProviderID)
+	assert.Equal(t, 0.0, averageRating.AverageRating)
+	assert.Equal(t, 0, averageRating.TotalRatings)
+
+	// Test GetAverageRatingByServiceProvider for non-existent service provider
+	_, err = s.GetAverageRatingByServiceProvider(ctx, "nonexistent")
+	assert.Equal(t, sql.ErrNoRows, err)
+}
+
 type mockRepository struct {
 	items []entity.Rating
 }
@@ -106,6 +150,21 @@ func (m *mockRepository) Create(ctx context.Context, rating entity.Rating) error
 
 func (m mockRepository) Count(ctx context.Context) (int, error) {
 	return len(m.items), nil
+}
+
+func (m mockRepository) GetAverageRatingByServiceProvider(ctx context.Context, serviceProviderID string) (float64, int, error) {
+	var total float64
+	var count int
+	for _, item := range m.items {
+		if item.ServiceProviderID == serviceProviderID {
+			total += float64(item.RatingValue)
+			count++
+		}
+	}
+	if count == 0 {
+		return 0, 0, nil
+	}
+	return total / float64(count), count, nil
 }
 
 type mockCustomerRepository struct{}

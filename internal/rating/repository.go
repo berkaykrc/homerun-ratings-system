@@ -2,10 +2,12 @@ package rating
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/berkaykrc/homerun-ratings-system/internal/entity"
 	"github.com/berkaykrc/homerun-ratings-system/pkg/dbcontext"
 	"github.com/berkaykrc/homerun-ratings-system/pkg/log"
+	dbx "github.com/go-ozzo/ozzo-dbx"
 )
 
 // Repository encapsulates the logic to access ratings from the data source.
@@ -16,6 +18,8 @@ type Repository interface {
 	Count(ctx context.Context) (int, error)
 	// Create saves a new rating in the storage.
 	Create(ctx context.Context, rating entity.Rating) error
+	// GetAverageRatingByServiceProvider returns the average rating and total count for a service provider.
+	GetAverageRatingByServiceProvider(ctx context.Context, serviceProviderID string) (float64, int, error)
 }
 
 // repository persists ratings in database
@@ -47,4 +51,24 @@ func (r repository) Count(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.With(ctx).Select("COUNT(*)").From("ratings").Row(&count)
 	return count, err
+}
+
+// GetAverageRatingByServiceProvider returns the average rating and total count for a service provider.
+func (r repository) GetAverageRatingByServiceProvider(ctx context.Context, serviceProviderID string) (float64, int, error) {
+	var avgRating sql.NullFloat64
+	var totalCount int
+
+	err := r.db.With(ctx).Select("AVG(rating_value) as avg_rating", "COUNT(*) as total_count").
+		From("ratings").
+		Where(dbx.HashExp{"service_provider_id": serviceProviderID}).
+		Row(&avgRating, &totalCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if !avgRating.Valid || totalCount == 0 {
+		return 0, 0, nil
+	}
+
+	return avgRating.Float64, totalCount, nil
 }

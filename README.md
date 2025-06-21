@@ -53,8 +53,9 @@ At this time, you have a RESTful API server running at `http://127.0.0.1:8080`. 
 * `GET /healthcheck`: a healthcheck service provided for health checking purpose (needed when implementing a server cluster)
 * `GET /v1/customers/:id`: returns the detailed information of a customer
 * `POST /v1/customers`: creates a new customer
-* `GET /v1/serviceproviders/:id`: returns the detailed information of a service provider
-* `POST /v1/serviceproviders`: creates a new customer
+* `GET /v1/service-providers/:id`: returns the detailed information of a service provider
+* `POST /v1/service-providers`: creates a new service provider
+* `GET /v1/service-providers/:id/average-rating`: returns the average rating for a service provider
 * `GET /v1/ratings/:id`: returns the detailed information of ratings
 * `POST /v1/ratings`: creates a new rating
 

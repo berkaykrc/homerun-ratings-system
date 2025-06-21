@@ -17,11 +17,20 @@ type Service interface {
 	Get(ctx context.Context, id string) (Rating, error)
 	Count(ctx context.Context) (int, error)
 	Create(ctx context.Context, input CreateRatingRequest) (Rating, error)
+	GetAverageRatingByServiceProvider(ctx context.Context, serviceProviderID string) (AverageRating, error)
 }
 
 // Rating represents the data about a rating.
 type Rating struct {
 	entity.Rating
+}
+
+// AverageRating represents the average rating data for a service provider.
+type AverageRating struct {
+	ServiceProviderID string    `json:"serviceProviderId"`
+	AverageRating     float64   `json:"averageRating"`
+	TotalRatings      int       `json:"totalRatings"`
+	LastUpdated       time.Time `json:"lastUpdated"`
 }
 
 // CreateRatingRequest represents a rating creation request.
@@ -103,4 +112,25 @@ func (s service) Create(ctx context.Context, req CreateRatingRequest) (Rating, e
 // Count returns the number of albums.
 func (s service) Count(ctx context.Context) (int, error) {
 	return s.repo.Count(ctx)
+}
+
+// GetAverageRatingByServiceProvider returns the average rating for a service provider.
+func (s service) GetAverageRatingByServiceProvider(ctx context.Context, serviceProviderID string) (AverageRating, error) {
+	// First verify that the service provider exists
+	_, err := s.serviceProviderService.Get(ctx, serviceProviderID)
+	if err != nil {
+		return AverageRating{}, err
+	}
+
+	avgRating, totalCount, err := s.repo.GetAverageRatingByServiceProvider(ctx, serviceProviderID)
+	if err != nil {
+		return AverageRating{}, err
+	}
+
+	return AverageRating{
+		ServiceProviderID: serviceProviderID,
+		AverageRating:     avgRating,
+		TotalRatings:      totalCount,
+		LastUpdated:       time.Now(),
+	}, nil
 }

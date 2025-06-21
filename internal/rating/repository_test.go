@@ -73,4 +73,40 @@ func TestRepository(t *testing.T) {
 	assert.Nil(t, err)
 	_, err = repo.Get(ctx, "test0")
 	assert.Equal(t, sql.ErrNoRows, err)
+
+	// Test average rating calculation
+	// Add more ratings for the same service provider
+	err = repo.Create(ctx, entity.Rating{
+		ID:                "test2",
+		CustomerID:        "customer1",
+		ServiceProviderID: "service1",
+		RatingValue:       3,
+		Comment:           "Good service",
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	})
+	assert.Nil(t, err)
+
+	err = repo.Create(ctx, entity.Rating{
+		ID:                "test3",
+		CustomerID:        "customer1",
+		ServiceProviderID: "service1",
+		RatingValue:       4,
+		Comment:           "Very good service",
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	})
+	assert.Nil(t, err)
+
+	// Test average rating: (5 + 3 + 4) / 3 = 4.0
+	avgRating, totalCount, err := repo.GetAverageRatingByServiceProvider(ctx, "service1")
+	assert.Nil(t, err)
+	assert.Equal(t, 3, totalCount)
+	assert.InDelta(t, 4.0, avgRating, 0.01) // Use InDelta for float comparison
+
+	// Test average rating for non-existent service provider
+	avgRating, totalCount, err = repo.GetAverageRatingByServiceProvider(ctx, "nonexistent")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, totalCount)
+	assert.Equal(t, 0.0, avgRating)
 }

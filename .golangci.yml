@@ -32,27 +32,14 @@ linters:
 issues:
   exclude-use-default: false
   exclude:
+    - "gocyclo:.*_test\\.go"
+    - "errcheck:.*_test\\.go"
+    - "dupl:.*_test\\.go"
+    - "gosec:.*_test\\.go"
+    - "G204"
+    - "G301"
+    - "G302"
     # Exclude some linters from running on tests files
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-    
-    # Exclude known linters from partially hard-to-fix issues
-    - linters:
-        - gosec
-      text: "G204" # Subprocess launched with variable
-      
-    - linters:
-        - gosec
-      text: "G301" # Poor file permissions used
-      
-    - linters:
-        - gosec
-      text: "G302" # Poor file permissions used
-
   max-same-issues: 0
   max-issues-per-linter: 0
 

@@ -33,7 +33,7 @@ var flagConfig = flag.String("config", "./config/local.yml", "path to the config
 func main() {
 	flag.Parse()
 	// create root logger tagged with server version
-	logger := log.New().With(nil, "version", Version)
+	logger := log.New().With(context.Background(), "version", Version)
 
 	// load application configurations
 	cfg, err := config.Load(*flagConfig, logger)
@@ -60,7 +60,7 @@ func main() {
 	address := fmt.Sprintf(":%v", cfg.ServerPort)
 	hs := &http.Server{
 		Addr:    address,
-		Handler: buildHandler(logger, dbcontext.New(db), cfg),
+		Handler: buildHandler(logger, dbcontext.New(db)),
 	}
 
 	// start the HTTP server with graceful shutdown
@@ -73,7 +73,7 @@ func main() {
 }
 
 // buildHandler sets up the HTTP routing and builds an HTTP handler.
-func buildHandler(logger log.Logger, db *dbcontext.DB, cfg *config.Config) http.Handler {
+func buildHandler(logger log.Logger, db *dbcontext.DB) http.Handler {
 	router := routing.New()
 
 	router.Use(
