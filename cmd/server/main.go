@@ -60,7 +60,7 @@ func main() {
 	address := fmt.Sprintf(":%v", cfg.ServerPort)
 	hs := &http.Server{
 		Addr:    address,
-		Handler: buildHandler(logger, dbcontext.New(db), cfg),
+		Handler: buildHandler(logger, dbcontext.New(db)),
 	}
 
 	// start the HTTP server with graceful shutdown
@@ -73,7 +73,7 @@ func main() {
 }
 
 // buildHandler sets up the HTTP routing and builds an HTTP handler.
-func buildHandler(logger log.Logger, db *dbcontext.DB, cfg *config.Config) http.Handler {
+func buildHandler(logger log.Logger, db *dbcontext.DB) http.Handler {
 	router := routing.New()
 
 	router.Use(
