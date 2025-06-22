@@ -1,1 +1,0 @@
-dsn: "postgres://127.0.0.1/homerun_ratings?sslmode=disable&user=postgres&password=postgres"

@@ -1,22 +1,11 @@
-# homerun ratings system
+# Homerun Ratings System
 
+A microservices-based service marketplace that enables Customers to rate Service Providers and notifies Service Providers when new ratings are added.
 
 [![GoDoc](https://godoc.org/github.com/berkaykrc/homerun-ratings-system?status.png)](http://godoc.org/github.com/berkaykrc/homerun-ratings-system)
 [![Build Status](https://github.com/berkaykrc/homerun-ratings-system/workflows/build/badge.svg)](https://github.com/berkaykrc/homerun-ratings-system/actions?query=workflow%3Abuild)
 [![Code Coverage](https://codecov.io/gh/qiangxue/go-rest-api/branch/master/graph/badge.svg)](https://codecov.io/gh/qiangxue/go-rest-api)
 [![Go Report](https://goreportcard.com/badge/github.com/berkaykrc/homerun-ratings-system)](https://goreportcard.com/report/github.com/berkaykrc/homerun-ratings-system)
-
-This project develops RESTful API services in Go. It promotes the best practices that follow the [SOLID principles](https://en.wikipedia.org/wiki/SOLID)
-and [clean architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html). 
-It encourages writing clean and idiomatic Go code. 
-
-The project uses the following Go packages to implement the above features:
-
-* Routing: [ozzo-routing](https://github.com/go-ozzo/ozzo-routing)
-* Database access: [ozzo-dbx](https://github.com/go-ozzo/ozzo-dbx)
-* Database migration: [golang-migrate](https://github.com/golang-migrate/migrate)
-* Data validation: [ozzo-validation](https://github.com/go-ozzo/ozzo-validation)
-* Logging: [zap](https://github.com/uber-go/zap)
 
 ## Getting Started
 
@@ -29,35 +18,41 @@ own database server. The project requires **Docker 17.05 or higher** for the mul
 After installing Go and Docker, run the following commands to start experiencing this project:
 
 ```shell
-# download the starter kit
+# Clone the repository
 git clone https://github.com/berkaykrc/homerun-ratings-system.git
-
 cd homerun-ratings-system
 
-# start a PostgreSQL database server in a Docker container
-make db-start
+# Start both services with Docker Compose
+docker-compose up --build
 
-# seed the database with some test data
-make testdata
+# Or run services individually:
 
-# run the RESTful API server
+# Start PostgreSQL database
+docker run --name homerun-postgres -e POSTGRES_DB=homerun_ratings -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:alpine
+
+# Run Rating Service
+cd rating-service
 make run
 
-# or run the API server with live reloading, which is useful during development
-# requires fswatch (https://github.com/emcrisostomo/fswatch)
-make run-live
+# Run Notification Service (in another terminal)
+cd notification-service
+go run cmd/server/main.go
 ```
 
-At this time, you have a RESTful API server running at `http://127.0.0.1:8080`. It provides the following endpoints:
+### Services and Endpoints
 
-* `GET /healthcheck`: a healthcheck service provided for health checking purpose (needed when implementing a server cluster)
-* `GET /v1/customers/:id`: returns the detailed information of a customer
-* `POST /v1/customers`: creates a new customer
-* `GET /v1/service-providers/:id`: returns the detailed information of a service provider
-* `POST /v1/service-providers`: creates a new service provider
-* `GET /v1/service-providers/:id/average-rating`: returns the average rating for a service provider
-* `GET /v1/ratings/:id`: returns the detailed information of ratings
-* `POST /v1/ratings`: creates a new rating
+#### Rating Service (Port 8080)
+* `GET /healthcheck`: Health check endpoint
+* `POST /v1/customers`: Create a new customer
+* `GET /v1/customers/:id`: Get customer details
+* `POST /v1/service-providers`: Create a new service provider
+* `GET /v1/service-providers/:id`: Get service provider details
+* `POST /v1/ratings`: Submit a rating for a service provider
+* `GET /v1/service-providers/:id/average-rating`: Get average rating for a service provider
+
+#### Notification Service (Port 8081)
+* `GET /api/notifications/:serviceProviderId`: Get notifications for a service provider
+* `POST /api/internal/notifications`: Internal endpoint for receiving notifications (called by Rating Service)
 
 
 Try the URL `http://localhost:8080/healthcheck` in a browser, and you should see something like `"OK vx.x.x"` displayed.
@@ -69,25 +64,27 @@ The project uses the following project layout:
  
 ```
 .
-├── cmd                  main applications of the project
-│   └── server           the API server application
-├── config               configuration files for different environments
-├── internal             private application and library code
-│   ├── config           configuration library
-│   ├── customer         customer feature
-│   ├── serviceprovider  service provider feature
-│   ├── rating           rating feature
-│   ├── entity           entity definitions and domain logic
-│   ├── errors           error types and handling
-│   ├── healthcheck      healthcheck feature
-│   └── test             helpers for testing purpose
-├── migrations           database migrations
-├── pkg                  public library code
-│   ├── accesslog        access log middleware
-│   ├── graceful         graceful shutdown of HTTP server
-│   ├── log              structured and context-aware logger
-│   └── pagination       paginated list
-└── testdata             test data scripts
+├── ratings-service          service for managing ratings
+│   ├── cmd                  main applications of the project
+│   │   └── server           the API server application
+│   ├── config               configuration files for different environments
+│   ├── internal             private application and library code
+│   │   ├── config           configuration library
+│   │   ├── customer         customer feature
+│   │   ├── serviceprovider  service provider feature
+│   │   ├── rating           rating feature
+│   │   ├── entity           entity definitions and domain logic
+│   │   ├── errors           error types and handling
+│   │   ├── healthcheck      healthcheck feature
+│   │   └── test             helpers for testing purpose
+│   ├── migrations           database migrations
+│   ├── pkg                  public library code
+│   │   ├── accesslog        access log middleware
+│   │   ├── graceful         graceful shutdown of HTTP server
+│   │   ├── log              structured and context-aware logger
+│   │   └── pagination       paginated list
+│   └── testdata             test data scripts
+└── notification-service     service for managing notifications
 ```
 
 The top level directories `cmd`, `internal`, `pkg` are commonly found in other popular Go projects, as explained in
@@ -101,34 +98,9 @@ Within each feature package, code are organized in layers (API, service, reposit
 as described in the [clean architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html).
 
 
-### Working with DB Transactions
-
-It is the responsibility of the service layer to determine whether DB operations should be enclosed in a transaction.
-The DB operations implemented by the repository layer should work both with and without a transaction.
-
-You can use `dbcontext.DB.Transactional()` in a service method to enclose multiple repository method calls in
-a transaction. For example,
-
-```go
-func serviceMethod(ctx context.Context, repo Repository, transactional dbcontext.TransactionFunc) error {
-    return transactional(ctx, func(ctx context.Context) error {
-        repo.method1(...)
-        repo.method2(...)
-        return nil
-    })
-}
-```
-
-If needed, you can also enclose method calls of different repositories in a single transaction. The return value
-of the function in `transactional` above determines if the transaction should be committed or rolled back.
-
-You can also use `dbcontext.DB.TransactionHandler()` as a middleware to enclose a whole API handler in a transaction.
-This is especially useful if an API handler needs to put method calls of multiple services in a transaction.
-
-
 ### Updating Database Schema
 
-The starter kit uses [database migration](https://en.wikipedia.org/wiki/Schema_migration) to manage the changes of the 
+The project uses [database migration](https://en.wikipedia.org/wiki/Schema_migration) to manage the changes of the 
 database schema over the whole project development phase. The following commands are commonly used with regard to database
 schema changes:
 
@@ -180,6 +152,4 @@ command,
 
 ```shell
 ./server -config=./config/prod.yml
-```
-
 ```

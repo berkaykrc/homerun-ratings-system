@@ -1,9 +1,8 @@
-version: '2.1'
 services:
-  server:
-    image: server
+  rating-service:
+    image: rating-service
     build:
-      context: .
+      context: ./rating-service
       dockerfile: cmd/server/Dockerfile
     volumes:
       - /tmp/app:/var/log/app
