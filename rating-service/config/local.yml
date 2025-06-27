@@ -2,3 +2,13 @@ dsn: "postgres://127.0.0.1/homerun_ratings?sslmode=disable&user=postgres&passwor
 notification_service:
   base_url: "http://localhost:8081"
   timeout: "10s"
+  retry:
+    max_attempts: 3
+    initial_delay: "100ms"
+    max_delay: "5s"
+    backoff_factor: 2.0
+    jitter: true
+  circuit_breaker:
+    failure_threshold: 5
+    recovery_timeout: "60s"
+    minimum_requests: 3

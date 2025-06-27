@@ -18,11 +18,9 @@ coverage*.*
 testdata/postgres
 
 # server binary
-server
-bin/
-rating-service/server
-notification-service/server
-./server
+/bin
+/rating-service/.server
+/notification-service/.notification-service
 
 # PID file generated to support live reload
 .pid

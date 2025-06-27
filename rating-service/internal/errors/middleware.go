@@ -45,19 +45,19 @@ func Handler(logger log.Logger) routing.Handler {
 
 // buildErrorResponse builds an error response from an error.
 func buildErrorResponse(err error) ErrorResponse {
-	switch err.(type) {
+	switch typedErr := err.(type) {
 	case ErrorResponse:
-		return err.(ErrorResponse)
+		return typedErr
 	case validation.Errors:
-		return InvalidInput(err.(validation.Errors))
+		return InvalidInput(typedErr)
 	case routing.HTTPError:
-		switch err.(routing.HTTPError).StatusCode() {
+		switch typedErr.StatusCode() {
 		case http.StatusNotFound:
 			return NotFound("")
 		default:
 			return ErrorResponse{
-				Status:  err.(routing.HTTPError).StatusCode(),
-				Message: err.Error(),
+				Status:  typedErr.StatusCode(),
+				Message: typedErr.Error(),
 			}
 		}
 	}

@@ -1,0 +1,34 @@
+# Ignore testdata directories
+testdata/postgres/
+testdata/postgres/*
+
+# Ignore build artifacts
+server
+*.log
+*.out
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore documentation
+README.md
+LICENSE
+
+# Ignore Docker files
+Dockerfile*
+docker-compose*
+
+# Ignore test coverage files
+coverage.html
+coverage.out

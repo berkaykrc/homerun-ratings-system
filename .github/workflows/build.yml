@@ -9,13 +9,18 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
+      - name: Update CA certificates
+        run: |
+          apt-get update
+          apt-get install -y ca-certificates
+
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.18
+      - name: Set up Go 1.23
         uses: actions/setup-go@v4
         with:
-          go-version: '1.18'
+          go-version: "1.23.0"
 
       - name: Run go format check
         run: |
@@ -24,11 +29,15 @@ jobs:
             exit 1
           fi
 
+      - name: Install golangci-lint CLI
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin 
+
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m
+        run: |
+          cd notification-service && golangci-lint run --timeout=5m
+          cd ../rating-service && golangci-lint run --timeout=5m
+
 
   build:
     name: Build and Test
@@ -42,16 +51,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: homerun_ratings
         ports:
-          - 5432/tcp
+          - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-
-      - name: Set up Go 1.18
+      - name: Set up Go 1.23
         uses: actions/setup-go@v4
         with:
-          go-version: '1.18'
-        id: go
+          go-version: "1.23.0"
+          cache-dependency-path: |
+            rating-service/go.sum
+            notification-service/go.sum
 
       - name: Set up path
         run: |
@@ -64,23 +74,15 @@ jobs:
 
       - name: Get dependencies
         run: |
+          go work sync
           go mod download
-          go mod verify
-          go get golang.org/x/tools/cmd/cover
-          go get github.com/mattn/goveralls
 
       - name: Build
         run: make build
 
       - name: Test
         env:
-          APP_DSN: postgres://127.0.0.1:${{ job.services.postgres.ports[5432] }}/homerun_ratings?sslmode=disable&user=postgres&password=postgres
+          APP_DSN: postgresql://postgres:postgres@localhost:5432/homerun_ratings?sslmode=disable
         run: |
-          make migrate
-          make test-cover
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage-all.out
+          make db-migrate
+          make test

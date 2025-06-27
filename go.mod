@@ -1,6 +1,6 @@
 module github.com/berkaykrc/homerun-ratings-system
 
-go 1.18
+go 1.23.0
 
 // This is a workspace root module
 // Individual services have their own go.mod files

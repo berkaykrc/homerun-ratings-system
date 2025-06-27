@@ -21,11 +21,11 @@ var (
 
 // Pages represents a paginated list of data items.
 type Pages struct {
-	Page       int         `json:"page"`
-	PerPage    int         `json:"per_page"`
-	PageCount  int         `json:"page_count"`
-	TotalCount int         `json:"total_count"`
-	Items      interface{} `json:"items"`
+	Page       int `json:"page"`
+	PerPage    int `json:"per_page"`
+	PageCount  int `json:"page_count"`
+	TotalCount int `json:"total_count"`
+	Items      any `json:"items"`
 }
 
 // New creates a new Pages instance.
@@ -135,7 +135,7 @@ func (p *Pages) BuildLinks(baseURL string, defaultPerPage int) [4]string {
 		links[2] = fmt.Sprintf("%v%v=%v", baseURL, PageVar, page+1)
 	}
 	if perPage := p.PerPage; perPage != defaultPerPage {
-		for i := 0; i < 4; i++ {
+		for i := range links {
 			if links[i] != "" {
 				links[i] += fmt.Sprintf("&%v=%v", PageSizeVar, perPage)
 			}

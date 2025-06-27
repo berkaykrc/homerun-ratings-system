@@ -11,16 +11,44 @@ services:
     environment:
       - APP_ENV=local
       - APP_DSN=postgres://db/homerun_ratings?sslmode=disable&user=postgres&password=postgres
+      - APP_NOTIFICATION_SERVICE={"baseUrl":"http://notification-service:8081"}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
     depends_on:
       db:
         condition: service_healthy
+      notification-service:
+        condition: service_healthy
+
+  notification-service:
+    image: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: cmd/server/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - APP_ENV=local
+      - APP_SERVER_PORT=8081
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/healthcheck"]
+      interval: 60s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+
   db:
-    image: "postgres:alpine"
+    image: "postgres:13"
     restart: always
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
       POSTGRES_DB: "homerun_ratings"
+      POSTGRES_HOST_AUTH_METHOD: md5
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

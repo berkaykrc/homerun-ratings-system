@@ -1,49 +1,7 @@
-run:
-  timeout: 5m
-  go: '1.18'
+version: "2"
 
-linters-settings:
-  govet:
-    check-shadowing: true
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
+default: standard
 
-linters:
-  enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - typecheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - goconst
-    - gocyclo
-    - dupl
-
-issues:
-  exclude-use-default: false
-  exclude:
-    - "gocyclo:.*_test\\.go"
-    - "errcheck:.*_test\\.go"
-    - "dupl:.*_test\\.go"
-    - "gosec:.*_test\\.go"
-    - "G204"
-    - "G301"
-    - "G302"
-    # Exclude some linters from running on tests files
-  max-same-issues: 0
-  max-issues-per-linter: 0
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+# linters:
+#   enable:
+#     - asasalint

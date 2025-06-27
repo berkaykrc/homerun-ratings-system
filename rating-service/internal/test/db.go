@@ -10,7 +10,7 @@ import (
 	"github.com/berkaykrc/homerun-ratings-system/rating-service/pkg/dbcontext"
 	"github.com/berkaykrc/homerun-ratings-system/rating-service/pkg/log"
 	dbx "github.com/go-ozzo/ozzo-dbx"
-	_ "github.com/lib/pq" // initialize posgresql for test
+	_ "github.com/lib/pq" // initialize postgresql for test
 )
 
 var db *dbcontext.DB

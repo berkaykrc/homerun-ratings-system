@@ -80,13 +80,11 @@ func (s service) Create(ctx context.Context, req CreateRatingRequest) (Rating, e
 		return Rating{}, err
 	}
 
-	// Verify customer exists
-	_, err := s.customerService.Get(ctx, req.CustomerID)
+	customer, err := s.customerService.Get(ctx, req.CustomerID)
 	if err != nil {
 		return Rating{}, fmt.Errorf("customer validation error: %v", err)
 	}
 
-	// Verify service provider exists
 	_, err = s.serviceProviderService.Get(ctx, req.ServiceProviderID)
 	if err != nil {
 		return Rating{}, fmt.Errorf("service provider validation error: %v", err)
@@ -108,12 +106,6 @@ func (s service) Create(ctx context.Context, req CreateRatingRequest) (Rating, e
 		return Rating{}, err
 	}
 
-	// Send notification to notification service
-	customer, err := s.customerService.Get(ctx, req.CustomerID)
-	if err != nil {
-		s.logger.With(ctx, "error", err, "customer_id", req.CustomerID).Error("Failed to get customer for notification")
-	}
-
 	notification := notification.RatingNotification{
 		ServiceProviderID: req.ServiceProviderID,
 		RatingID:          id,
@@ -123,8 +115,13 @@ func (s service) Create(ctx context.Context, req CreateRatingRequest) (Rating, e
 	}
 
 	go func() {
-		if err := s.notificationClient.SendRatingNotification(ctx, notification); err != nil {
-			s.logger.With(ctx, "error", err, "rating_id", id).Error("Failed to send rating notification")
+		// Create a new context for the notification to avoid cancellation
+		// when the original request context is done
+		notificationCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := s.notificationClient.SendRatingNotification(notificationCtx, notification); err != nil {
+			s.logger.With(notificationCtx, "error", err, "rating_id", id).Error("Failed to send rating notification")
 		}
 	}()
 
