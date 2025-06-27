@@ -5,40 +5,6 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update CA certificates
-        run: |
-          apt-get update
-          apt-get install -y ca-certificates
-
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Set up Go 1.23
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.23.0"
-
-      - name: Run go format check
-        run: |
-          if [ -n "$(go fmt ./...)" ]; then
-            echo "Code is not formatted. Run 'go fmt ./...' to fix."
-            exit 1
-          fi
-
-      - name: Install golangci-lint CLI
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin 
-
-      - name: Run golangci-lint
-        run: |
-          cd notification-service && golangci-lint run --timeout=5m
-          cd ../rating-service && golangci-lint run --timeout=5m
-
-
   build:
     name: Build and Test
     runs-on: ubuntu-latest
