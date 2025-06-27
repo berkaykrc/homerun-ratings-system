@@ -1,7 +1,5 @@
 version: "2"
 
-default: standard
+linters:
+  default: standard
 
-# linters:
-#   enable:
-#     - asasalint
