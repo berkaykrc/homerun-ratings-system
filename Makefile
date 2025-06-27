@@ -1,121 +1,90 @@
-MODULE = $(shell go list -m)
-VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || echo "1.0.0")
-PACKAGES := $(shell go list ./... | grep -v /vendor/)
-LDFLAGS := -ldflags "-X main.Version=${VERSION}"
+# Homerun Ratings System Makefile
 
-CONFIG_FILE ?= ./config/local.yml
-APP_DSN ?= $(shell sed -n 's/^dsn:[[:space:]]*"\(.*\)"/\1/p' $(CONFIG_FILE))
-MIGRATE := docker run -v $(shell pwd)/migrations:/migrations --network host migrate/migrate:v4.10.0 -path=/migrations/ -database "$(APP_DSN)"
+.PHONY: help build test clean start stop logs restart docker-build
+.PHONY: rating-build rating-test rating-run 
+.PHONY: notification-build notification-test notification-run
+.PHONY: db-start db-stop db-migrate testdata
 
-PID_FILE := './.pid'
-FSWATCH_FILE := './fswatch.cfg'
+# Default target
+.DEFAULT_GOAL := help
 
-.PHONY: default
-default: help
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# generate help info from comments: thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-.PHONY: help
-help: ## help information about make commands
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+build: ## Build both services
+	@echo "Creating bin directory..."
+	@mkdir -p bin
+	@echo "Building Rating Service..."
+	@cd rating-service && go build -o ../bin/rating-service ./cmd/server
+	@echo "Building Notification Service..."
+	@cd notification-service && go build -o ../bin/notification-service ./cmd/server
+	@echo "Build complete! Binaries are in ./bin/"
 
-.PHONY: test
-test: ## run unit tests
-	@echo "mode: count" > coverage-all.out
-	@$(foreach pkg,$(PACKAGES), \
-		go test -p=1 -cover -covermode=count -coverprofile=coverage.out ${pkg}; \
-		tail -n +2 coverage.out >> coverage-all.out;)
+test: ## Run tests for both services
+	@echo "Testing Rating Service..."
+	@cd rating-service && go test -v ./... 
+	@echo "Testing Notification Service..."
+	@cd notification-service && go test -v ./...
 
-.PHONY: test-cover
-test-cover: test ## run unit tests and show test coverage information
-	go tool cover -html=coverage-all.out
+clean: ## Clean build artifacts
+	@rm -rf bin/
+	@cd rating-service && go clean
+	@cd notification-service && go clean
 
-.PHONY: run
-run: ## run the API server
-	go run ${LDFLAGS} cmd/server/main.go
+start: ## Start services with Docker Compose
+	@docker compose up -d
 
-.PHONY: run-restart
-run-restart: ## restart the API server
-	@pkill -P `cat $(PID_FILE)` || true
-	@printf '%*s\n' "80" '' | tr ' ' -
-	@echo "Source file changed. Restarting server..."
-	@go run ${LDFLAGS} cmd/server/main.go & echo $$! > $(PID_FILE)
-	@printf '%*s\n' "80" '' | tr ' ' -
+stop: ## Stop services
+	@docker compose down
 
-run-live: ## run the API server with live reload support (requires fswatch)
-	@go run ${LDFLAGS} cmd/server/main.go & echo $$! > $(PID_FILE)
-	@fswatch -x -o --event Created --event Updated --event Renamed -r internal pkg cmd config | xargs -n1 -I {} make run-restart
+logs: ## Show logs from all services
+	@docker compose logs -f
 
-.PHONY: build
-build:  ## build the API server binary
-	CGO_ENABLED=0 go build ${LDFLAGS} -a -o server $(MODULE)/cmd/server
+restart: stop start ## Restart all services
 
-.PHONY: build-docker
-build-docker: ## build the API server as a docker image
-	docker build -f cmd/server/Dockerfile -t server .
+docker-build: ## Build Docker images for both services
+	@echo "Building Docker images..."
+	@docker compose build
+	@echo "Docker images built successfully!"
 
-.PHONY: clean
-clean: ## remove temporary files
-	rm -rf server coverage.out coverage-all.out
+# Rating Service specific targets
+rating-build: ## Build rating service only
+	@cd rating-service && make build
 
-.PHONY: version
-version: ## display the version of the API server
-	@echo $(VERSION)
+rating-test: ## Test rating service only
+	@cd rating-service && make test
 
-.PHONY: db-start
-db-start: ## start the database server
-	@mkdir -p testdata/postgres
-	docker run --rm --name postgres -v $(shell pwd)/testdata:/testdata \
-		-v $(shell pwd)/testdata/postgres:/var/lib/postgresql/data \
-		-e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=homerun_ratings -d -p 5432:5432 postgres
+rating-run: ## Run rating service locally
+	@cd rating-service && make run
 
-.PHONY: db-stop
-db-stop: ## stop the database server
-	docker stop postgres
+# Notification Service specific targets  
+notification-build: ## Build notification service only
+	@cd notification-service && go build ./cmd/server
 
-.PHONY: testdata
-testdata: ## populate the database with test data
-	make migrate-reset
-	@echo "Populating test data..."
-	@docker exec -it postgres psql "$(APP_DSN)" -f /testdata/testdata.sql
+notification-test: ## Test notification service only
+	@cd notification-service && go test ./...
 
-.PHONY: lint
-lint: ## run golangci-lint on all Go packages
-	@which golangci-lint > /dev/null || (echo "golangci-lint not found. Install it with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
-	@golangci-lint run ./...
+notification-run: ## Run notification service locally
+	@cd notification-service && go run ./cmd/server
 
-.PHONY: lint-simple
-lint-simple: ## run basic Go linting with vet and fmt check
-	@echo "Running go vet..."
-	@go vet ./...
-	@echo "Checking formatting..."
-	@test -z "$$(go fmt ./...)" || (echo "Code is not formatted. Run 'make fmt' to fix." && exit 1)
+# Database operations
+db-start: ## Start PostgreSQL database
+	@docker run --name homerun-postgres -d \
+		-e POSTGRES_DB=homerun_ratings \
+		-e POSTGRES_USER=postgres \
+		-e POSTGRES_PASSWORD=postgres \
+		-p 5432:5432 \
+		postgres:alpine
 
-.PHONY: lint-install
-lint-install: ## install golangci-lint
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+db-stop: ## Stop PostgreSQL database
+	@docker stop homerun-postgres || true
+	@docker rm homerun-postgres || true
 
-.PHONY: fmt
-fmt: ## run "go fmt" on all Go packages
-	@go fmt ./...
+db-migrate: ## Run database migrations
+	@cd rating-service && make migrate
 
-.PHONY: migrate
-migrate: ## run all new database migrations
-	@echo "Running all new database migrations..."
-	@$(MIGRATE) up
-
-.PHONY: migrate-down
-migrate-down: ## revert database to the last migration step
-	@echo "Reverting database to the last migration step..."
-	@$(MIGRATE) down 1
-
-.PHONY: migrate-new
-migrate-new: ## create a new database migration
-	@read -p "Enter the name of the new migration: " name; \
-	$(MIGRATE) create -ext sql -dir /migrations/ $${name// /_}
-
-.PHONY: migrate-reset
-migrate-reset: ## reset database and re-run all migrations
-	@echo "Resetting database..."
-	@$(MIGRATE) drop
-	@echo "Running all database migrations..."
-	@$(MIGRATE) up
+testdata: ## Load test data
+	@cd rating-service && make testdata

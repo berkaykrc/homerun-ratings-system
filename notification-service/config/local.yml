@@ -1,0 +1,17 @@
+server_port: 8081
+
+retry:
+  max_attempts: 3
+  initial_delay: 100ms
+  max_delay: 5s
+  backoff_factor: 2.0
+  jitter: true
+
+circuit_breaker:
+  failure_threshold: 5
+  recovery_timeout: 60s
+  minimum_requests: 3
+
+cleanup:
+  interval: 1m
+  max_age: 1m
