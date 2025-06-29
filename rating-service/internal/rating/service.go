@@ -115,9 +115,7 @@ func (s service) Create(ctx context.Context, req CreateRatingRequest) (Rating, e
 	}
 
 	go func() {
-		// Create a new context for the notification to avoid cancellation
-		// when the original request context is done
-		notificationCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		notificationCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
 		if err := s.notificationClient.SendRatingNotification(notificationCtx, notification); err != nil {

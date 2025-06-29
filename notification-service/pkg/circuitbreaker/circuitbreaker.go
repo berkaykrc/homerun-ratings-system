@@ -63,9 +63,9 @@ func (c Config) Validate() error {
 // CircuitBreaker implements the circuit breaker pattern
 type CircuitBreaker struct {
 	config       Config
-	state        State
-	failureCount int
-	requestCount int
+	state        State // open / closed / half-open
+	failureCount int   // Count of consecutive failures
+	requestCount int   // Count of total requests
 	lastFailTime time.Time
 	mutex        sync.RWMutex
 	logger       log.Logger

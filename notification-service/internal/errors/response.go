@@ -9,9 +9,9 @@ import (
 
 // ErrorResponse is the response that represents an error.
 type ErrorResponse struct {
-	Status  int         `json:"status"`
-	Message string      `json:"message"`
-	Details interface{} `json:"details,omitempty"`
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	Details any    `json:"details,omitempty"`
 }
 
 // Error is required by the error interface.

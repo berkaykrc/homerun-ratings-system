@@ -86,7 +86,7 @@ func TestCircuitBreaker_Recovery(t *testing.T) {
 	testError := errors.New("test error")
 
 	// Force circuit breaker to open
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		err := cb.Execute(ctx, func(ctx context.Context) error {
 			return testError
 		})
@@ -128,7 +128,7 @@ func TestCircuitBreaker_HalfOpenFailure(t *testing.T) {
 	testError := errors.New("test error")
 
 	// Force circuit breaker to open
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		err := cb.Execute(ctx, func(ctx context.Context) error {
 			return testError
 		})

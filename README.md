@@ -112,7 +112,12 @@ make run
 #### Notification Service (Port 8081)
 
 - `GET /healthcheck`: Health check endpoint for the notification service
-- `GET /api/notifications/:serviceProviderId`: Get notifications for a service provider
+- `GET /api/notifications/:serviceProviderId?lastChecked=<RFC3339 timestamp>`:  
+  Get notifications for a service provider.  
+  - **Query Parameter:**  
+    - `lastChecked` (optional, RFC3339 format): Only return notifications created after this timestamp. If not provided, all undelivered notifications will be returned.
+  - **Example:**  
+    `/api/notifications/123e4567-e89b-12d3-a456-426614174000?lastChecked=2025-06-16T10:00:00Z`
 - `POST /api/internal/notifications`: Internal endpoint for receiving notifications (called by Rating Service)
 
 Try the URL `http://localhost:8080/healthcheck` or `http://localhost:8081/healthcheck` in a browser, and you should see something like `"OK vx.x.x"` displayed.
@@ -222,14 +227,16 @@ command,
 * gRPC/Message Brokers or WebSockets(gorilla,melody) integration for asynchronous processing and better decoupling
 * Enhanced security measures (e.g., authentication/authorization with JWT tokens)
 * Monitoring and logging improvements (Grafana, Datadog, etc.)
-* Redis can be used for caching notifications in the notification service instead of in-memory storage
-* Implementing a more robust error handling and retry mechanism
+* Redis can be used for caching notifications in the notification service and ratings in the rating service to reduce database load and improve performance.
 * Implementing a more sophisticated notification system (e.g., email, SMS, push notifications)
-* Could be used shared libraries for common functionalities (e.g., logging, error handling, etc.) if the project grows larger and not split into multiple repositories
-* [Retry strategy can be improved with following article algoritms](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)
-* [hystrix-go](https://github.com/afex/hystrix-go) can be used for notification send in httpclient circuit breaker pattern to handle failures gracefully instead of current retry mechanism or [heimdall](https://github.com/gojek/heimdall) which provides advanced resilience features (retries, circuit breakers, etc.) at one go also use hystrix-like pattern.
-* Could be used maintaned web framework, routing like Gin, Gorilla Mux, Echo, etc. instead of ozzo-routing
-* Could be used GORM instead for database operations instead of ozzo-dbx
+* [Retry strategy can be improved with following article algorithms “Decorrelated Jitter” and “Full Jitter”](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)
+* Adaptive techniques for circuit breaker current one relied on preconfigured thresholds such as failure count and duration. [hystrix-go](https://github.com/afex/hystrix-go) can be used for notification send in httpclient circuit breaker pattern to handle failures gracefully or [heimdall](https://github.com/gojek/heimdall) which provides advanced resilience features (retries, circuit breakers, etc.) at one go also use hystrix-like pattern. Also awareness of idempotency in the notification service to avoid duplicate notifications (outbox pattern is solution).
+* Could use a maintained web framework like Gin, Gorilla Mux, Echo, etc. instead of ozzo-routing
+* Could be used GORM manage database operations and migration instead of ozzo-dbx with migrate package
 * k6 or locust can be used for load testing the services
 * Repository tests should run on test database instead of actual database with Testcontainers
-* Pagination can be implemented for the rating service
+* Table-driven testing can be used more in tests for consistency and readability
+* Pagination can be implemented for the notification service currently it returns all notifications for a service provider and for the rating service currently it returns all ratings for a service provider
+
+## Resources
+- [What I studied so far about Go while doing this project](https://roadmap.sh/golang?s=64a44259ec22530247ecb37d)

@@ -10,5 +10,5 @@ notification_service:
     jitter: true
   circuit_breaker:
     failure_threshold: 5
-    recovery_timeout: "60s"
+    recovery_timeout: "15s"
     minimum_requests: 3
