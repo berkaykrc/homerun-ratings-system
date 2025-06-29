@@ -46,7 +46,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		FailureThreshold: 5,
-		RecoveryTimeout:  60 * time.Second,
+		RecoveryTimeout:  15 * time.Second,
 		MinimumRequests:  3,
 	}
 }

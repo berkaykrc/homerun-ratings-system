@@ -103,12 +103,13 @@ func WithRetry(ctx context.Context, config RetryConfig, fn RetryableFunc, isRetr
 func calculateDelay(attempt int, config RetryConfig) time.Duration {
 	// Calculate exponential backoff
 	delay := min(
-		// Apply maximum delay limit
+		// Apply maximum delay limit starting with 100ms then 200 ms, 400 ms, etc.
+		// Used the formula: initial_delay * (backoff_factor ^ (attempt - 1))
 		time.Duration(float64(config.InitialDelay)*math.Pow(config.BackoffFactor, float64(attempt-1))), config.MaxDelay)
 
 	// Add jitter to prevent thundering herd
 	if config.Jitter {
-		// Add random jitter up to 10% of the delay
+		// Add random jitter up to 10% of the delay (additive jitter)
 		jitter := time.Duration(rand.Float64() * float64(delay) * 0.1)
 		delay += jitter
 	}
